@@ -728,31 +728,6 @@ function handleLifecycleFallbackEvent(host: CompactionHost, payload: AgentEventP
   }, FALLBACK_TOAST_DURATION_MS);
 }
 
-function commitChatStreamAtToolBoundary(
-  host: ToolStreamHost,
-  runId: string,
-  toolCallId: string,
-  timestamp: number,
-): void {
-  if (host.chatRunId !== runId || !host.chatStream || host.chatStream.trim().length === 0) {
-    return;
-  }
-  host.chatStreamSegments = [
-    ...host.chatStreamSegments,
-    { text: host.chatStream, ts: timestamp, toolCallId },
-  ];
-  host.chatStream = null;
-  host.chatStreamStartedAt = null;
-}
-
-function trimCommittedCronStreamPrefix(host: ToolStreamHost, text: string): string {
-  if (host.chatStream || host.chatStreamSegments.length === 0) {
-    return text;
-  }
-  const committedText = host.chatStreamSegments.map((segment) => segment.text).join("");
-  return committedText && text.startsWith(committedText) ? text.slice(committedText.length) : text;
-}
-
 export function replayCronLiveEvents(
   host: ToolStreamHost,
   events: readonly CronLiveReplayEvent[],
@@ -812,16 +787,8 @@ export function handleAgentEvent(host: ToolStreamHost, payload?: AgentEventPaylo
       return;
     }
     host.chatRunId = payload.runId;
-    host.chatStream = trimCommittedCronStreamPrefix(host, text);
+    host.chatStream = text;
     host.chatStreamStartedAt ??= payload.ts;
-    return;
-  }
-
-  if (payload.stream === "item" && sessionKey && isLiveCronRunSessionForHost(host, sessionKey)) {
-    const toolCallId = typeof payload.data?.toolCallId === "string" ? payload.data.toolCallId : "";
-    if (payload.data?.phase === "start" && toolCallId) {
-      commitChatStreamAtToolBoundary(host, payload.runId, toolCallId, payload.ts ?? Date.now());
-    }
     return;
   }
 
@@ -851,7 +818,21 @@ export function handleAgentEvent(host: ToolStreamHost, payload?: AgentEventPaylo
   const now = Date.now();
   let entry = host.toolStreamById.get(toolCallId);
   if (!entry) {
-    commitChatStreamAtToolBoundary(host, payload.runId, toolCallId, now);
+    // Commit any in-progress streaming text as a segment so it renders
+    // above the tool card instead of below it.
+    if (
+      host.chatRunId &&
+      payload.runId === host.chatRunId &&
+      host.chatStream &&
+      host.chatStream.trim().length > 0
+    ) {
+      host.chatStreamSegments = [
+        ...host.chatStreamSegments,
+        { text: host.chatStream, ts: now, toolCallId },
+      ];
+      host.chatStream = null;
+      host.chatStreamStartedAt = null;
+    }
     entry = {
       toolCallId,
       runId: payload.runId,

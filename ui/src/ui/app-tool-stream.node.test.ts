@@ -146,53 +146,6 @@ describe("app-tool-stream Cron live transcript projection", () => {
     expect(host.chatStream).toBe("The task is ready.");
   });
 
-  it("splits a cumulative Cron assistant stream at an item command boundary", () => {
-    const globalWithWindow = globalThis as typeof globalThis & {
-      window?: Window & typeof globalThis;
-    };
-    globalWithWindow.window ??= globalThis as unknown as Window & typeof globalThis;
-    const parentSessionKey = "agent:main:cron:job-1";
-    const runSessionKey = `${parentSessionKey}:run:session-1`;
-    const host = createHost({ sessionKey: parentSessionKey });
-
-    handleAgentEvent(
-      host,
-      agentEvent("agent-run-1", 1, "assistant", { text: "First message." }, runSessionKey),
-    );
-    handleAgentEvent(
-      host,
-      agentEvent(
-        "agent-run-1",
-        2,
-        "item",
-        {
-          itemId: "command:call-1",
-          toolCallId: "call-1",
-          kind: "command",
-          phase: "start",
-          title: "command echo hello",
-          status: "running",
-        },
-        runSessionKey,
-      ),
-    );
-    handleAgentEvent(
-      host,
-      agentEvent(
-        "agent-run-1",
-        3,
-        "assistant",
-        { text: "First message. Second message." },
-        runSessionKey,
-      ),
-    );
-
-    expect(host.chatStreamSegments).toMatchObject([
-      { text: "First message.", toolCallId: "call-1" },
-    ]);
-    expect(host.chatStream).toBe(" Second message.");
-  });
-
   it("replays buffered Cron child events through the Chat and tool renderers", () => {
     const globalWithWindow = globalThis as typeof globalThis & {
       window?: Window & typeof globalThis;
