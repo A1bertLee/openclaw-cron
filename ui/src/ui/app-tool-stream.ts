@@ -2,7 +2,7 @@
 import { updateActivityFromToolEvent, type ActivityEntry } from "./activity-model.ts";
 import { createChatModelOverride } from "./chat-model-ref.ts";
 import type { ChatModelOverride } from "./chat-model-ref.types.ts";
-import { isCronRunSessionForParent } from "./cron-live-inspector.ts";
+import { isCronRunSessionForParent, type CronLiveReplayEvent } from "./cron-live-inspector.ts";
 import { formatUnknownText, truncateText } from "./format.ts";
 import {
   buildAgentMainSessionKey,
@@ -726,6 +726,16 @@ function handleLifecycleFallbackEvent(host: CompactionHost, payload: AgentEventP
     host.fallbackStatus = null;
     host.fallbackClearTimer = null;
   }, FALLBACK_TOAST_DURATION_MS);
+}
+
+export function replayCronLiveEvents(
+  host: ToolStreamHost,
+  events: readonly CronLiveReplayEvent[],
+): void {
+  for (const event of events) {
+    handleAgentEvent(host, event as AgentEventPayload);
+  }
+  flushToolStreamSync(host);
 }
 
 export function handleAgentEvent(host: ToolStreamHost, payload?: AgentEventPayload) {

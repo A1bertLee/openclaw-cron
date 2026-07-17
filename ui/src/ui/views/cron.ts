@@ -395,11 +395,13 @@ function renderCronLiveInspector(
                         data-test-id="cron-live-event-list"
                         style="max-height: 240px; overflow-y: auto; margin-top: 6px;"
                       >
-                        ${events.map(
-                          (event) => html`<div style="margin-top: 4px;">
-                            ${formatMs(event.ts)} · ${event.summary}
-                          </div>`,
-                        )}
+                        ${events
+                          .slice(1)
+                          .map(
+                            (event) => html`<div style="margin-top: 4px;">
+                              ${formatMs(event.ts)} · ${event.summary}
+                            </div>`,
+                          )}
                       </div>
                     </details>`
                   : nothing}

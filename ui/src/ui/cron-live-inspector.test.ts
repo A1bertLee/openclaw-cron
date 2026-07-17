@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { appendCronLiveAgentEvent, createCronLiveInspectorState } from "./cron-live-inspector.ts";
+import {
+  appendCronLiveAgentEvent,
+  createCronLiveInspectorState,
+  getCronLiveReplayEvents,
+} from "./cron-live-inspector.ts";
 
 describe("cron live inspector", () => {
   it("captures live agent events from an isolated cron run without accepting ordinary chat events", () => {
@@ -41,8 +45,58 @@ describe("cron live inspector", () => {
             status: "running",
           },
         ],
+        replayEvents: [
+          {
+            runId: "cron-run",
+            seq: 1,
+            stream: "tool",
+            ts: 2,
+            sessionKey: "agent:main:cron:job-1:run:session-1",
+            data: { name: "web_search", phase: "start" },
+          },
+        ],
       },
     ]);
+    expect(getCronLiveReplayEvents(state, "agent:main:cron:job-1")).toEqual([
+      {
+        runId: "cron-run",
+        seq: 1,
+        stream: "tool",
+        ts: 2,
+        sessionKey: "agent:main:cron:job-1:run:session-1",
+        data: { name: "web_search", phase: "start" },
+      },
+    ]);
+  });
+
+  it("coalesces tool lifecycle snapshots into one display entry without dropping replay events", () => {
+    const state = createCronLiveInspectorState();
+    const base = {
+      runId: "cron-run",
+      stream: "tool",
+      sessionKey: "agent:main:cron:job-1:run:session-1",
+      data: { toolCallId: "call-1", name: "exec", phase: "start" },
+    };
+
+    appendCronLiveAgentEvent(state, { ...base, seq: 1, ts: 1 });
+    appendCronLiveAgentEvent(state, {
+      ...base,
+      seq: 2,
+      ts: 2,
+      data: { toolCallId: "call-1", name: "exec", phase: "result" },
+    });
+
+    expect(state.runs[0]?.events).toEqual([
+      {
+        seq: 2,
+        stream: "tool",
+        ts: 2,
+        summary: "exec completed",
+        status: "completed",
+        toolCallId: "call-1",
+      },
+    ]);
+    expect(state.runs[0]?.replayEvents.map((event) => event.seq)).toEqual([1, 2]);
   });
 
   it("deduplicates replayed events and bounds the event buffer per run", () => {

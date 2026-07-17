@@ -28,6 +28,7 @@ import {
   switchChatSessionAndWait,
 } from "./app-render.helpers.ts";
 import { hasOperatorAdminAccess, hasOperatorWriteAccess, warnQueryToken } from "./app-settings.ts";
+import { replayCronLiveEvents } from "./app-tool-stream.ts";
 import type { AppViewState } from "./app-view-state.ts";
 import { reconcileChatRunLifecycle } from "./chat/run-lifecycle.ts";
 import {
@@ -154,6 +155,7 @@ import {
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import { captureSessionToWorkboard, getWorkboardState } from "./controllers/workboard.ts";
+import { getCronLiveReplayEvents } from "./cron-live-inspector.ts";
 import { getCronJobPayload } from "./cron-payload.ts";
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "./external-link.ts";
 import { formatTimeMs } from "./format.ts";
@@ -3166,9 +3168,13 @@ export function renderApp(state: AppViewState) {
                   }
                   await loadCronRuns(state, state.cronRunsJobId);
                 }),
-                onNavigateToChat: (sessionKey) => {
-                  switchChatSession(state, sessionKey);
+                onNavigateToChat: async (sessionKey) => {
                   state.setTab("chat" as import("./navigation.ts").Tab);
+                  await switchChatSessionAndWait(state, sessionKey);
+                  replayCronLiveEvents(
+                    state as unknown as Parameters<typeof replayCronLiveEvents>[0],
+                    getCronLiveReplayEvents(state.cronLiveInspector, sessionKey),
+                  );
                 },
               }),
             )

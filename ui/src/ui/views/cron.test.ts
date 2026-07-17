@@ -126,6 +126,7 @@ describe("cron view", () => {
         startedAt: number;
         lastEventAt: number;
         events: Array<{ seq: number; stream: string; ts: number; summary: string; status: string }>;
+        replayEvents: Array<{ seq: number }>;
       }>;
     };
     props.liveRuns = [
@@ -140,6 +141,7 @@ describe("cron view", () => {
           { seq: 2, stream: "tool", ts: 300, summary: "latest event", status: "running" },
           { seq: 3, stream: "tool", ts: 200, summary: "middle event", status: "completed" },
         ],
+        replayEvents: [],
       },
     ];
     const onNavigateToChat = vi.fn();
@@ -164,8 +166,9 @@ describe("cron view", () => {
     );
     expect(eventList?.style.maxHeight).toBe("240px");
     expect(eventList?.style.overflowY).toBe("auto");
-    expect(eventList?.textContent?.indexOf("latest event")).toBeLessThan(
-      eventList?.textContent?.indexOf("middle event") ?? 0,
+    expect(eventList?.textContent).not.toContain("latest event");
+    expect(eventList?.textContent?.indexOf("middle event")).toBeLessThan(
+      eventList?.textContent?.indexOf("older event") ?? 0,
     );
     getButtonByText(inspector ?? container, "Open session").click();
     expect(onNavigateToChat).toHaveBeenCalledWith("agent:main:cron:job-1");

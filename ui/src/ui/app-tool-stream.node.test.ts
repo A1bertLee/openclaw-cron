@@ -5,6 +5,7 @@ import {
   flushToolStreamSync,
   handleAgentEvent,
   handleSessionOperationEvent,
+  replayCronLiveEvents,
   type FallbackStatus,
   type ToolStreamEntry,
 } from "./app-tool-stream.ts";
@@ -142,6 +143,67 @@ describe("app-tool-stream Cron live transcript projection", () => {
         runSessionKey,
       ),
     );
+    expect(host.chatStream).toBe("The task is ready.");
+  });
+
+  it("replays buffered Cron child events through the Chat and tool renderers", () => {
+    const globalWithWindow = globalThis as typeof globalThis & {
+      window?: Window & typeof globalThis;
+    };
+    globalWithWindow.window ??= globalThis as unknown as Window & typeof globalThis;
+    const parentSessionKey = "agent:main:cron:job-1";
+    const runSessionKey = `${parentSessionKey}:run:session-1`;
+    const host = createHost({ sessionKey: parentSessionKey });
+
+    replayCronLiveEvents(host, [
+      {
+        runId: "agent-run-1",
+        seq: 1,
+        stream: "assistant",
+        ts: 1,
+        sessionKey: runSessionKey,
+        data: { text: "I will inspect the task." },
+      },
+      {
+        runId: "agent-run-1",
+        seq: 2,
+        stream: "tool",
+        ts: 2,
+        sessionKey: runSessionKey,
+        data: {
+          toolCallId: "call-1",
+          name: "read_file",
+          phase: "start",
+          args: { path: "notes.md" },
+        },
+      },
+      {
+        runId: "agent-run-1",
+        seq: 3,
+        stream: "tool",
+        ts: 3,
+        sessionKey: runSessionKey,
+        data: { toolCallId: "call-1", name: "read_file", phase: "result", result: { text: "ok" } },
+      },
+      {
+        runId: "agent-run-1",
+        seq: 4,
+        stream: "assistant",
+        ts: 4,
+        sessionKey: runSessionKey,
+        data: { text: "The task is ready." },
+      },
+    ]);
+
+    expect(host.chatStreamSegments).toMatchObject([{ text: "I will inspect the task." }]);
+    expect(host.chatToolMessages).toMatchObject([
+      {
+        content: [
+          { type: "toolcall", name: "read_file" },
+          { type: "toolresult", name: "read_file", text: "ok" },
+        ],
+      },
+    ]);
     expect(host.chatStream).toBe("The task is ready.");
   });
 });
