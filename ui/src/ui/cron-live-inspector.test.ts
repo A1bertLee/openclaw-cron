@@ -99,6 +99,41 @@ describe("cron live inspector", () => {
     expect(state.runs[0]?.replayEvents.map((event) => event.seq)).toEqual([1, 2]);
   });
 
+  it("removes a completed run and its replay buffer before the next run of the same job", () => {
+    const state = createCronLiveInspectorState();
+    const sessionKey = "agent:main:cron:job-1:run:session-1";
+
+    appendCronLiveAgentEvent(state, {
+      runId: "cron-run-1",
+      seq: 1,
+      stream: "assistant",
+      ts: 1,
+      sessionKey,
+      data: { text: "first execution" },
+    });
+    appendCronLiveAgentEvent(state, {
+      runId: "cron-run-1",
+      seq: 2,
+      stream: "lifecycle",
+      ts: 2,
+      sessionKey,
+      data: { phase: "end" },
+    });
+    appendCronLiveAgentEvent(state, {
+      runId: "cron-run-2",
+      seq: 1,
+      stream: "assistant",
+      ts: 3,
+      sessionKey: "agent:main:cron:job-1:run:session-2",
+      data: { text: "second execution" },
+    });
+
+    expect(state.runs.map((run) => run.runId)).toEqual(["cron-run-2"]);
+    expect(
+      getCronLiveReplayEvents(state, "agent:main:cron:job-1").map((event) => event.data),
+    ).toEqual([{ text: "second execution" }]);
+  });
+
   it("deduplicates replayed events and bounds the event buffer per run", () => {
     const state = createCronLiveInspectorState({ maxEventsPerRun: 2 });
     const base = {

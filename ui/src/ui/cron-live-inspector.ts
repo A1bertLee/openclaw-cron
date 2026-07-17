@@ -198,6 +198,9 @@ export function appendCronLiveAgentEvent(
     run.replayEvents.splice(0, overflow);
   }
   run.lastEventAt = ts;
+  if (stream === "lifecycle" && details.status !== "running") {
+    state.runs.splice(state.runs.indexOf(run), 1);
+  }
   return true;
 }
 
