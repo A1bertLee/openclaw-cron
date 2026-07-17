@@ -672,7 +672,11 @@ export const cronHandlers: GatewayRequestHandlers = {
       );
       return;
     }
-    const { taskRunId, afterSeq } = params as { taskRunId: string; afterSeq?: number };
+    const { taskRunId, afterSeq } = params as { taskRunId?: string; afterSeq?: number };
+    if (!taskRunId) {
+      respond(true, { runs: context.cronLiveRunEvents.list() }, undefined);
+      return;
+    }
     const snapshot = context.cronLiveRunEvents.read({ taskRunId, afterSeq });
     if (!snapshot) {
       respond(

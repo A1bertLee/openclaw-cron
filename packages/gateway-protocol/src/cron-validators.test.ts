@@ -278,8 +278,10 @@ describe("cron protocol validators", () => {
     expect(validateCronListParams({ lastRunStatus: "pending" })).toBe(false);
   });
 
-  it("accepts active run replay cursors and rejects invalid task run ids", () => {
+  it("accepts active run snapshots and replay cursors while rejecting invalid task run ids", () => {
+    expect(validateCronRunWatchParams({})).toBe(true);
     expect(validateCronRunWatchParams({ taskRunId: "cron:job-1:123", afterSeq: 0 })).toBe(true);
+    expect(validateCronRunWatchParams({ afterSeq: 0 })).toBe(false);
     expect(validateCronRunWatchParams({ taskRunId: "cron:job-1:123", afterSeq: -1 })).toBe(false);
     expect(validateCronRunWatchParams({ taskRunId: "not-a-cron-run" })).toBe(false);
   });

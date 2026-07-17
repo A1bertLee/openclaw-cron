@@ -49,6 +49,15 @@ describe("CronLiveRunEventStore", () => {
     });
   });
 
+  it("lists only active snapshots for a reconnecting client", () => {
+    const store = createCronLiveRunEventStore();
+    store.register({ taskRunId: "cron:job-1:1", jobId: "job-1", startedAtMs: 1 });
+    store.register({ taskRunId: "cron:job-2:2", jobId: "job-2", startedAtMs: 2 });
+    store.finish("cron:job-1:1");
+
+    expect(store.list().map((run) => run.taskRunId)).toEqual(["cron:job-2:2"]);
+  });
+
   it("evicts completed runs and reports a retention gap", () => {
     const store = createCronLiveRunEventStore({ maxEventsPerRun: 2 });
     store.register({ taskRunId: "cron:job-1:1", jobId: "job-1", startedAtMs: 1, sessionKey: "s" });

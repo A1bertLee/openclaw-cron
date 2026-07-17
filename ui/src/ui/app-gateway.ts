@@ -894,6 +894,7 @@ export function connectGateway(host: GatewayHost, options?: ConnectGatewayOption
         { force: true },
       );
       void loadAgentsThenRefreshActiveTabForClient(host, client);
+      rehydrateCronLiveInspector(host, client);
       scheduleDeferredStartupWork(() => {
         if (host.client !== client) {
           return;
@@ -1273,6 +1274,56 @@ function replayDeferredSessionMessageReloadAfterSessionsRefresh(
     { sessionKey },
     completedRunId,
   );
+}
+
+function rehydrateCronLiveInspector(host: GatewayHost, client: GatewayBrowserClient): void {
+  if (host.cronLiveInspector?.runs.length) {
+    return;
+  }
+  void client
+    .request("cron.run.watch", {})
+    .then((result) => {
+      if (
+        host.client !== client ||
+        !result ||
+        typeof result !== "object" ||
+        Array.isArray(result)
+      ) {
+        return;
+      }
+      const runs = (result as { runs?: unknown }).runs;
+      if (!Array.isArray(runs)) {
+        return;
+      }
+      const state = createCronLiveInspectorState();
+      for (const run of runs) {
+        if (!run || typeof run !== "object" || Array.isArray(run)) continue;
+        const snapshot = run as {
+          taskRunId?: unknown;
+          sessionKey?: unknown;
+          agentId?: unknown;
+          events?: unknown;
+        };
+        if (typeof snapshot.taskRunId !== "string" || typeof snapshot.sessionKey !== "string")
+          continue;
+        if (!Array.isArray(snapshot.events)) continue;
+        for (const event of snapshot.events) {
+          if (!event || typeof event !== "object" || Array.isArray(event)) continue;
+          const entry = event as { seq?: unknown; stream?: unknown; ts?: unknown; data?: unknown };
+          appendCronLiveAgentEvent(state, {
+            runId: snapshot.taskRunId,
+            seq: entry.seq,
+            stream: entry.stream,
+            ts: entry.ts,
+            sessionKey: snapshot.sessionKey,
+            agentId: snapshot.agentId,
+            data: entry.data,
+          });
+        }
+      }
+      if (state.runs.length) host.cronLiveInspector = state;
+    })
+    .catch(() => undefined);
 }
 
 function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {

@@ -215,6 +215,17 @@ export function createCronLiveRunEventStore(options?: {
       return true;
     },
 
+    list() {
+      return [...runsByTaskRunId.values()]
+        .map((run) => ({
+          ...run,
+          events: [...run.events],
+          oldestSeq: run.events[0]?.seq ?? run.lastSeq + 1,
+          hasMoreBefore: false,
+        }))
+        .sort((a, b) => b.startedAtMs - a.startedAtMs || a.taskRunId.localeCompare(b.taskRunId));
+    },
+
     read(params: { taskRunId: string; afterSeq?: number }): CronLiveRunSnapshot | undefined {
       const run = runsByTaskRunId.get(params.taskRunId);
       if (!run) return undefined;
