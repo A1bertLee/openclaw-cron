@@ -1302,16 +1302,21 @@ function rehydrateCronLiveInspector(host: GatewayHost, client: GatewayBrowserCli
           taskRunId?: unknown;
           sessionKey?: unknown;
           agentId?: unknown;
+          agentRunId?: unknown;
           events?: unknown;
         };
         if (typeof snapshot.taskRunId !== "string" || typeof snapshot.sessionKey !== "string")
           continue;
+        const runId =
+          typeof snapshot.agentRunId === "string" && snapshot.agentRunId.trim()
+            ? snapshot.agentRunId
+            : snapshot.taskRunId;
         if (!Array.isArray(snapshot.events)) continue;
         for (const event of snapshot.events) {
           if (!event || typeof event !== "object" || Array.isArray(event)) continue;
           const entry = event as { seq?: unknown; stream?: unknown; ts?: unknown; data?: unknown };
           appendCronLiveAgentEvent(state, {
-            runId: snapshot.taskRunId,
+            runId,
             seq: entry.seq,
             stream: entry.stream,
             ts: entry.ts,
