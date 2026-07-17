@@ -85,6 +85,9 @@ export function createGatewayRequestContext(
     get cron() {
       return params.runtimeState.cronState.cron;
     },
+    get cronLiveRunEvents() {
+      return params.runtimeState.cronState.liveRunEvents;
+    },
     get cronStorePath() {
       return params.runtimeState.cronState.storePath;
     },

@@ -168,6 +168,8 @@ import {
   type CronRunLogEntry,
   type CronRunParams,
   CronRunParamsSchema,
+  type CronRunWatchParams,
+  CronRunWatchParamsSchema,
   type CronRunsParams,
   CronRunsParamsSchema,
   type CronStatusParams,
@@ -839,6 +841,7 @@ export const validateCronAddParams = lazyCompile<CronAddParams>(CronAddParamsSch
 export const validateCronUpdateParams = lazyCompile<CronUpdateParams>(CronUpdateParamsSchema);
 export const validateCronRemoveParams = lazyCompile<CronRemoveParams>(CronRemoveParamsSchema);
 export const validateCronRunParams = lazyCompile<CronRunParams>(CronRunParamsSchema);
+export const validateCronRunWatchParams = lazyCompile<CronRunWatchParams>(CronRunWatchParamsSchema);
 export const validateCronRunsParams = lazyCompile<CronRunsParams>(CronRunsParamsSchema);
 export const validateDevicePairListParams = lazyCompile<DevicePairListParams>(
   DevicePairListParamsSchema,
@@ -1177,6 +1180,7 @@ export {
   CronUpdateParamsSchema,
   CronRemoveParamsSchema,
   CronRunParamsSchema,
+  CronRunWatchParamsSchema,
   CronRunsParamsSchema,
   LogsTailParamsSchema,
   LogsTailResultSchema,

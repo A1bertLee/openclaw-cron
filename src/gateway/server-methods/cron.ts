@@ -8,6 +8,7 @@ import {
   validateCronListParams,
   validateCronRemoveParams,
   validateCronRunParams,
+  validateCronRunWatchParams,
   validateCronRunsParams,
   validateCronStatusParams,
   validateCronUpdateParams,
@@ -661,6 +662,27 @@ export const cronHandlers: GatewayRequestHandlers = {
       throw error;
     }
     respond(true, result, undefined);
+  },
+  "cron.run.watch": ({ params, respond, context }) => {
+    if (!validateCronRunWatchParams(params)) {
+      respondInvalidCronParams(
+        respond,
+        "cron.run.watch",
+        formatValidationErrors(validateCronRunWatchParams.errors),
+      );
+      return;
+    }
+    const { taskRunId, afterSeq } = params as { taskRunId: string; afterSeq?: number };
+    const snapshot = context.cronLiveRunEvents.read({ taskRunId, afterSeq });
+    if (!snapshot) {
+      respond(
+        false,
+        undefined,
+        errorShape(ErrorCodes.INVALID_REQUEST, `active cron task run not found: ${taskRunId}`),
+      );
+      return;
+    }
+    respond(true, snapshot, undefined);
   },
   "cron.runs": async ({ params, respond, context }) => {
     if (!validateCronRunsParams(params)) {

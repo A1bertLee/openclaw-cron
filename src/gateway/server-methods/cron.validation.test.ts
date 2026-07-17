@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChannelPlugin } from "../../channels/plugins/types.public.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { createCronLiveRunEventStore } from "../../cron/live-run-events.js";
 import type { CronDelivery, CronJob } from "../../cron/types.js";
 import { resetPluginRuntimeStateForTest, setActivePluginRegistry } from "../../plugins/runtime.js";
 import {
@@ -84,6 +85,7 @@ function createCronContext(currentJob?: CronJob) {
       wake: vi.fn(() => ({ ok: true }) as const),
       readJob: vi.fn(async (id: string) => (id === currentJob?.id ? currentJob : undefined)),
     },
+    cronLiveRunEvents: createCronLiveRunEventStore(),
     logGateway: {
       info: vi.fn(),
     },
@@ -347,6 +349,37 @@ describe("cron method validation", () => {
 
   afterEach(() => {
     resetPluginRuntimeStateForTest();
+  });
+
+  it("returns a sanitized active run replay snapshot", async () => {
+    const context = createCronContext();
+    context.cronLiveRunEvents.register({
+      taskRunId: "cron:cron-1:1",
+      jobId: "cron-1",
+      startedAtMs: 1,
+      sessionKey: "cron:cron-1",
+    });
+    context.cronLiveRunEvents.appendAgentEvent({
+      runId: "agent-1",
+      seq: 9,
+      stream: "assistant",
+      ts: 2,
+      sessionKey: "cron:cron-1",
+      data: { text: "working", token: "secret" },
+    });
+    const { respond } = await invokeCron(
+      "cron.run.watch",
+      { taskRunId: "cron:cron-1:1" },
+      { context },
+    );
+    expect(respond).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({
+        taskRunId: "cron:cron-1:1",
+        events: [{ seq: 1, stream: "assistant", ts: 2, data: { text: "working" } }],
+      }),
+      undefined,
+    );
   });
 
   it("accepts threadId on announce delivery add params", async () => {

@@ -1175,6 +1175,7 @@ export async function startGatewayServer(
         sessionMessageSubscribers,
         chatAbortControllers,
         restartRecoveryCandidates,
+        cronLiveRunEvents: runtimeState.cronState.liveRunEvents,
       }),
     );
     Object.assign(runtimeState, runtimeSubscriptions);

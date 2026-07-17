@@ -14,6 +14,7 @@ function makeContextParams(
   const runtimeState: Pick<GatewayServerLiveState, "cronState"> = {
     cronState: {
       cron: { start: vi.fn(), stop: vi.fn() } as never,
+      liveRunEvents: {} as never,
       storePath: "/tmp/cron",
       cronEnabled: true,
     },
@@ -84,6 +85,7 @@ describe("createGatewayRequestContext", () => {
     const runtimeState: Pick<GatewayServerLiveState, "cronState"> = {
       cronState: {
         cron: cronA,
+        liveRunEvents: {} as never,
         storePath: "/tmp/cron-a",
         cronEnabled: true,
       },
@@ -96,6 +98,7 @@ describe("createGatewayRequestContext", () => {
 
     runtimeState.cronState = {
       cron: cronB,
+      liveRunEvents: {} as never,
       storePath: "/tmp/cron-b",
       cronEnabled: true,
     };

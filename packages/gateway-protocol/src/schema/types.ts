@@ -261,6 +261,7 @@ export type CronAddParams = SchemaType<"CronAddParams">;
 export type CronUpdateParams = SchemaType<"CronUpdateParams">;
 export type CronRemoveParams = SchemaType<"CronRemoveParams">;
 export type CronRunParams = SchemaType<"CronRunParams">;
+export type CronRunWatchParams = SchemaType<"CronRunWatchParams">;
 export type CronRunsParams = SchemaType<"CronRunsParams">;
 export type CronRunLogEntry = SchemaType<"CronRunLogEntry">;
 

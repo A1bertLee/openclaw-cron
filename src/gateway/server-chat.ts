@@ -271,6 +271,7 @@ export type AgentEventHandlerOptions = {
   loadGatewaySessionRowForSnapshot?: typeof loadGatewaySessionRow;
   lifecycleErrorRetryGraceMs?: number;
   isChatSendRunActive?: (runId: string) => boolean;
+  onGatewayAgentEvent?: (event: AgentEventPayload) => void;
   clearTrackedActiveRun?: (params: {
     runId: string;
     clientRunId: string;
@@ -310,6 +311,7 @@ export function createAgentEventHandler({
   loadGatewaySessionRowForSnapshot = loadGatewaySessionRow,
   lifecycleErrorRetryGraceMs = AGENT_LIFECYCLE_ERROR_RETRY_GRACE_MS,
   isChatSendRunActive = () => false,
+  onGatewayAgentEvent,
   clearTrackedActiveRun,
   markTrackedRunTerminalPersisted,
   trackTrackedRunTerminalPersistence,
@@ -1134,6 +1136,7 @@ export function createAgentEventHandler({
   };
 
   return (evt: AgentEventPayload) => {
+    onGatewayAgentEvent?.(evt);
     const lifecyclePhase =
       evt.stream === "lifecycle" && typeof evt.data?.phase === "string" ? evt.data.phase : null;
 

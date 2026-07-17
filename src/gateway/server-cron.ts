@@ -19,9 +19,15 @@ import { runCronCommandJob } from "../cron/command-runner.js";
 import { resolveCronStoredDeliveryContext } from "../cron/delivery-context.js";
 import { resolveCronDeliveryPlan, sendCronAnnouncePayloadStrict } from "../cron/delivery.js";
 import { runCronIsolatedAgentTurn } from "../cron/isolated-agent.js";
+import {
+  createCronLiveRunEventStore,
+  type CronLiveRunEventStore,
+} from "../cron/live-run-events.js";
+import { createCronExecutionId } from "../cron/run-id.js";
 import { appendCronRunLog, resolveCronRunLogPruneOptions } from "../cron/run-log.js";
 import type { CronServiceContract } from "../cron/service-contract.js";
 import { CronService } from "../cron/service.js";
+import { resolveMainSessionCronRunSessionKey } from "../cron/service/task-runs.js";
 import {
   resolveCronDeliverySessionKey,
   resolveCronSessionTargetSessionKey,
@@ -59,6 +65,7 @@ import {
 
 export type GatewayCronState = {
   cron: CronServiceContract;
+  liveRunEvents: CronLiveRunEventStore;
   storePath: string;
   cronEnabled: boolean;
 };
@@ -132,7 +139,9 @@ export function buildGatewayCronService(params: {
   cfg: OpenClawConfig;
   deps: CliDeps;
   broadcast: (event: string, payload: unknown, opts?: { dropIfSlow?: boolean }) => void;
+  liveRunEvents?: CronLiveRunEventStore;
 }): GatewayCronState {
+  const liveRunEvents = params.liveRunEvents ?? createCronLiveRunEventStore();
   const cronLogger = getChildLogger({ module: "cron" });
   const storePath = resolveCronJobsStorePath(params.cfg.cron?.store);
   const cronEnabled = process.env.OPENCLAW_SKIP_CRON !== "1" && params.cfg.cron?.enabled !== false;
@@ -581,6 +590,24 @@ export function buildGatewayCronService(params: {
       }),
     log: getChildLogger({ module: "cron", storePath }),
     onEvent: (evt) => {
+      if (evt.action === "started" && typeof evt.runAtMs === "number") {
+        const taskRunId = createCronExecutionId(evt.jobId, evt.runAtMs);
+        const job = evt.job;
+        const sessionKey =
+          job?.sessionTarget === "main"
+            ? resolveMainSessionCronRunSessionKey(job, evt.runAtMs)
+            : (resolveCronSessionTargetSessionKey(job?.sessionTarget) ?? `cron:${evt.jobId}`);
+        liveRunEvents.register({
+          taskRunId,
+          jobId: evt.jobId,
+          startedAtMs: evt.runAtMs,
+          agentId: job?.agentId,
+          sessionKey,
+        });
+      }
+      if (evt.action === "finished" && typeof evt.runAtMs === "number") {
+        liveRunEvents.finish(createCronExecutionId(evt.jobId, evt.runAtMs));
+      }
       params.broadcast("cron", evt, { dropIfSlow: true });
       // Build hook event from CronEvent. The job snapshot is carried on the
       // internal event so it's available even for "removed" actions where
@@ -665,5 +692,5 @@ export function buildGatewayCronService(params: {
     },
   });
 
-  return { cron, storePath, cronEnabled };
+  return { cron, liveRunEvents, storePath, cronEnabled };
 }

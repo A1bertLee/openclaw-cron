@@ -3,6 +3,7 @@
 import { loadManifestModelCatalog } from "../agents/model-catalog.js";
 import type { CliDeps } from "../cli/deps.types.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { createCronLiveRunEventStore } from "../cron/live-run-events.js";
 import type { CronServiceContract } from "../cron/service-contract.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
@@ -75,6 +76,7 @@ export function createLocalGatewayRequestContext(
   return {
     deps: params.deps,
     cron: unavailableCron,
+    cronLiveRunEvents: createCronLiveRunEventStore(),
     cronStorePath: "",
     getRuntimeConfig: params.getRuntimeConfig,
     loadGatewayModelCatalog: async () =>

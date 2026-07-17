@@ -33,6 +33,7 @@ import {
   normalizeCronRunDiagnostics,
   summarizeCronRunDiagnostics,
 } from "../run-diagnostics.js";
+import { createCronExecutionId } from "../run-id.js";
 import { computeNextRunAtMs } from "../schedule.js";
 import { sweepCronRunSessions } from "../session-reaper.js";
 import type {
@@ -1226,9 +1227,15 @@ export async function onTimer(state: CronServiceState) {
       const activeJobMarker = markCronJobActive(job.id, {
         preserveAcrossGenerationAdvance: job.sessionTarget === "main",
       });
-      emit(state, { jobId: job.id, action: "started", job, runAtMs: startedAt });
-      const jobTimeoutMs = resolveCronJobTimeoutMs(job);
       const taskRunId = tryCreateCronTaskRun({ state, job, startedAt });
+      emit(state, {
+        jobId: job.id,
+        action: "started",
+        job,
+        runAtMs: startedAt,
+        runId: taskRunId,
+      });
+      const jobTimeoutMs = resolveCronJobTimeoutMs(job);
 
       try {
         const result = await executeJobCoreWithTimeout(state, job, {
@@ -1743,6 +1750,7 @@ async function runStartupCatchupCandidate(
     action: "started",
     job: candidate.job,
     runAtMs: startedAt,
+    runId: taskRunId,
   });
   try {
     const result = await executeJobCoreWithTimeout(state, candidate.job, {
@@ -2180,7 +2188,14 @@ export async function executeJob(
   const activeJobMarker = markCronJobActive(job.id, {
     preserveAcrossGenerationAdvance: job.sessionTarget === "main",
   });
-  emit(state, { jobId: job.id, action: "started", job, runAtMs: startedAt });
+  const taskRunId = tryCreateCronTaskRun({ state, job, startedAt });
+  emit(state, {
+    jobId: job.id,
+    action: "started",
+    job,
+    runAtMs: startedAt,
+    runId: taskRunId ?? createCronExecutionId(job.id, startedAt),
+  });
 
   let coreResult: {
     status: CronRunStatus;
@@ -2189,7 +2204,7 @@ export async function executeJob(
   } & CronRunOutcome &
     CronRunTelemetry;
   try {
-    coreResult = await executeJobCoreWithTimeout(state, job, { activeJobMarker });
+    coreResult = await executeJobCoreWithTimeout(state, job, { runId: taskRunId, activeJobMarker });
   } catch (err) {
     coreResult = { status: "error", error: String(err) };
   }
@@ -2206,6 +2221,13 @@ export async function executeJob(
   });
 
   emitJobFinished(state, job, coreResult, startedAt);
+  tryFinishCronTaskRun(state, {
+    taskRunId,
+    status: coreResult.status,
+    error: coreResult.error,
+    summary: coreResult.summary,
+    endedAt,
+  });
 
   if (shouldDelete && state.store) {
     state.store.jobs = state.store.jobs.filter((j) => j.id !== job.id);

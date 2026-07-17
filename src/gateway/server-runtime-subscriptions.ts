@@ -1,4 +1,5 @@
 // Gateway event subscription wiring for agent, heartbeat, transcript, and lifecycle broadcasts.
+import type { CronLiveRunEventStore } from "../cron/live-run-events.js";
 import { clearAgentRunContext, onAgentEvent } from "../infra/agent-events.js";
 import { onHeartbeatEvent } from "../infra/heartbeat-events.js";
 import { onSessionLifecycleEvent } from "../sessions/session-lifecycle-events.js";
@@ -28,6 +29,7 @@ export function startGatewayEventSubscriptions(params: {
   sessionMessageSubscribers: SessionMessageSubscriberRegistry;
   chatAbortControllers: Map<string, ChatAbortControllerEntry>;
   restartRecoveryCandidates: Map<string, RestartRecoveryCandidate>;
+  cronLiveRunEvents: CronLiveRunEventStore;
 }) {
   let agentEventHandlerPromise: Promise<
     ReturnType<typeof import("./server-chat.js").createAgentEventHandler>
@@ -49,6 +51,7 @@ export function startGatewayEventSubscriptions(params: {
         toolEventRecipients: params.toolEventRecipients,
         sessionEventSubscribers: params.sessionEventSubscribers,
         sessionMessageSubscribers: params.sessionMessageSubscribers,
+        onGatewayAgentEvent: (event) => params.cronLiveRunEvents.appendAgentEvent(event),
         clearTrackedActiveRun: ({ runId, clientRunId }) => {
           const candidateRunIds = runId === clientRunId ? [runId] : [runId, clientRunId];
           for (const candidateRunId of candidateRunIds) {

@@ -192,6 +192,7 @@ export const CORE_GATEWAY_METHOD_SPECS: readonly CoreGatewayMethodSpec[] = [
   { name: "cron.update", scope: "operator.admin" },
   { name: "cron.remove", scope: "operator.admin" },
   { name: "cron.run", scope: "operator.admin" },
+  { name: "cron.run.watch", scope: "operator.read" },
   { name: "cron.runs", scope: "operator.read" },
   { name: "gateway.identity.get", scope: "operator.read" },
   { name: "gateway.restart.preflight", scope: "operator.read" },

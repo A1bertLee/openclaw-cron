@@ -518,6 +518,15 @@ export const CronRunParamsSchema = cronIdOrJobIdParams({
   mode: Type.Optional(Type.Union([Type.Literal("due"), Type.Literal("force")])),
 });
 
+/** Reads the bounded in-memory progress journal for one active cron task run. */
+export const CronRunWatchParamsSchema = Type.Object(
+  {
+    taskRunId: Type.String({ pattern: "^cron:[^:/\\\\]+:[0-9]+$" }),
+    afterSeq: Type.Optional(Type.Integer({ minimum: 0 })),
+  },
+  { additionalProperties: false },
+);
+
 /** Query params for cron run history. */
 export const CronRunsParamsSchema = Type.Object(
   {

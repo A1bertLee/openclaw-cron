@@ -6,6 +6,7 @@ import {
   validateCronListParams,
   validateCronRemoveParams,
   validateCronRunParams,
+  validateCronRunWatchParams,
   validateCronRunsParams,
   validateCronUpdateParams,
 } from "./index.js";
@@ -275,6 +276,12 @@ describe("cron protocol validators", () => {
     expect(validateCronListParams({ agentId: "" })).toBe(false);
     expect(validateCronListParams({ scheduleKind: "yearly" })).toBe(false);
     expect(validateCronListParams({ lastRunStatus: "pending" })).toBe(false);
+  });
+
+  it("accepts active run replay cursors and rejects invalid task run ids", () => {
+    expect(validateCronRunWatchParams({ taskRunId: "cron:job-1:123", afterSeq: 0 })).toBe(true);
+    expect(validateCronRunWatchParams({ taskRunId: "cron:job-1:123", afterSeq: -1 })).toBe(false);
+    expect(validateCronRunWatchParams({ taskRunId: "not-a-cron-run" })).toBe(false);
   });
 
   it("enforces runs limit minimum for id and jobId selectors", () => {
