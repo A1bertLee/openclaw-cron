@@ -1527,6 +1527,12 @@ export const ja_JP: TranslationMap = {
       refreshing: "更新中...",
       refresh: "更新",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "実行中",
+      openSession: "Open session",
+    },
     jobs: {
       title: "ジョブ",
       subtitle: "Gateway に保存されているすべてのスケジュール済みジョブ。",

@@ -78,15 +78,15 @@ import { normalizeAssistantIdentity } from "./assistant-identity.ts";
 import { restoreChatComposerState } from "./chat/composer-persistence.ts";
 import { exportChatMarkdown } from "./chat/export.ts";
 import {
+  reconcileRealtimeTalkCatalogSelection,
+  type RealtimeTalkCatalogProvider,
+} from "./chat/realtime-talk-catalog.ts";
+import {
   createRealtimeTalkConversationState,
   updateRealtimeTalkConversation,
   type RealtimeTalkConversationEntry,
   type RealtimeTalkConversationState,
 } from "./chat/realtime-talk-conversation.ts";
-import {
-  reconcileRealtimeTalkCatalogSelection,
-  type RealtimeTalkCatalogProvider,
-} from "./chat/realtime-talk-catalog.ts";
 import {
   RealtimeTalkSession,
   type RealtimeTalkLaunchOptions,
@@ -123,6 +123,10 @@ import type {
   ClawHubSkillDetail,
   SkillMessage,
 } from "./controllers/skills.ts";
+import {
+  createCronLiveInspectorState,
+  type CronLiveInspectorState,
+} from "./cron-live-inspector.ts";
 import { importCustomThemeFromUrl } from "./custom-theme.ts";
 import {
   clearActiveFloatingTooltips,
@@ -610,6 +614,7 @@ export class OpenClawApp extends LitElement {
   @state() cronRunsSortDir: import("./types.js").CronSortDir = "desc";
   @state() cronModelSuggestions: string[] = [];
   @state() cronBusy = false;
+  @state() cronLiveInspector: CronLiveInspectorState = createCronLiveInspectorState();
 
   @state() updateAvailable: import("./types.js").UpdateAvailable | null = null;
 

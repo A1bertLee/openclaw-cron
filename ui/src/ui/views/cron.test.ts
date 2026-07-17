@@ -2,6 +2,7 @@
 import { render } from "lit";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_CRON_FORM } from "../app-defaults.ts";
+import { cronParentSessionKeyFromRun } from "../cron-live-inspector.ts";
 import type { CronJob } from "../types.ts";
 import { createDefaultDraft, renderCronQuickCreate } from "./cron-quick-create.ts";
 import { renderCron, type CronProps } from "./cron.ts";
@@ -115,6 +116,61 @@ function getElement<T extends Element>(
 }
 
 describe("cron view", () => {
+  it("renders live isolated Cron run events separately from completed history", () => {
+    const container = document.createElement("div");
+    const props = createProps() as CronProps & {
+      liveRuns: Array<{
+        runId: string;
+        jobId: string;
+        sessionKey: string;
+        startedAt: number;
+        lastEventAt: number;
+        events: Array<{ seq: number; stream: string; ts: number; summary: string; status: string }>;
+      }>;
+    };
+    props.liveRuns = [
+      {
+        runId: "cron-run-1",
+        jobId: "job-1",
+        sessionKey: "agent:main:cron:job-1:run:session-1",
+        startedAt: 1,
+        lastEventAt: 2,
+        events: [
+          { seq: 1, stream: "tool", ts: 100, summary: "older event", status: "completed" },
+          { seq: 2, stream: "tool", ts: 300, summary: "latest event", status: "running" },
+          { seq: 3, stream: "tool", ts: 200, summary: "middle event", status: "completed" },
+        ],
+      },
+    ];
+    const onNavigateToChat = vi.fn();
+    props.onNavigateToChat = onNavigateToChat;
+    expect(cronParentSessionKeyFromRun(props.liveRuns[0]!.sessionKey)).toBe(
+      "agent:main:cron:job-1",
+    );
+    render(renderCron(props), container);
+
+    const inspector = container.querySelector('[data-test-id="cron-live-inspector"]');
+    expect(inspector?.textContent).toContain("Live runs");
+    expect(inspector?.textContent).toContain("latest event");
+    expect(inspector?.textContent).toContain("job-1");
+    const latest = inspector?.querySelector('[data-test-id="cron-live-latest-event"]');
+    expect(latest?.textContent).toContain("latest event");
+    const eventDetails = inspector?.querySelector<HTMLDetailsElement>(
+      '[data-test-id="cron-live-run-events"]',
+    );
+    expect(eventDetails?.open).toBe(false);
+    const eventList = inspector?.querySelector<HTMLElement>(
+      '[data-test-id="cron-live-event-list"]',
+    );
+    expect(eventList?.style.maxHeight).toBe("240px");
+    expect(eventList?.style.overflowY).toBe("auto");
+    expect(eventList?.textContent?.indexOf("latest event")).toBeLessThan(
+      eventList?.textContent?.indexOf("middle event") ?? 0,
+    );
+    getButtonByText(inspector ?? container, "Open session").click();
+    expect(onNavigateToChat).toHaveBeenCalledWith("agent:main:cron:job-1");
+  });
+
   it("shows all-job history mode and wires run/job filters", () => {
     const container = document.createElement("div");
     const onRunsFiltersChange = vi.fn();

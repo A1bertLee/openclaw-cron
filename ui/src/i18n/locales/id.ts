@@ -1521,6 +1521,12 @@ export const id: TranslationMap = {
       refreshing: "Memuat ulang...",
       refresh: "Muat ulang",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "berjalan",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Tugas",
       subtitle: "Semua tugas terjadwal yang disimpan di Gateway.",

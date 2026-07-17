@@ -1504,6 +1504,12 @@ export const ar: TranslationMap = {
       refreshing: "جارٍ التحديث...",
       refresh: "تحديث",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "قيد التشغيل",
+      openSession: "Open session",
+    },
     jobs: {
       title: "المهام",
       subtitle: "كل المهام المجدولة المخزنة في Gateway.",

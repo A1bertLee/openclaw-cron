@@ -1524,6 +1524,12 @@ export const uk: TranslationMap = {
       refreshing: "Оновлення...",
       refresh: "Оновити",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "виконується",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Завдання",
       subtitle: "Усі заплановані завдання, збережені у шлюзі.",

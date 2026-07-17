@@ -1488,6 +1488,12 @@ export const th: TranslationMap = {
       refreshing: "กำลังรีเฟรช...",
       refresh: "รีเฟรช",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "กำลังทำงาน",
+      openSession: "Open session",
+    },
     jobs: {
       title: "งาน",
       subtitle: "งานตามกำหนดเวลาทั้งหมดที่จัดเก็บไว้ในเกตเวย์",

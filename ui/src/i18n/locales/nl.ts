@@ -1527,6 +1527,12 @@ export const nl: TranslationMap = {
       refreshing: "Vernieuwen...",
       refresh: "Vernieuwen",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "actief",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Taken",
       subtitle: "Alle geplande taken die in de Gateway zijn opgeslagen.",

@@ -73,6 +73,11 @@ import {
   type SessionsState,
 } from "./controllers/sessions.ts";
 import {
+  appendCronLiveAgentEvent,
+  createCronLiveInspectorState,
+  type CronLiveInspectorState,
+} from "./cron-live-inspector.ts";
+import {
   resolveGatewayErrorDetailCode,
   type GatewayEventFrame,
   type GatewayHelloOk,
@@ -117,6 +122,7 @@ type GatewayHost = {
   eventLogBuffer: EventLogEntry[];
   eventLog: EventLogEntry[];
   tab: Tab;
+  cronLiveInspector?: CronLiveInspectorState;
   presenceEntries: PresenceEntry[];
   presenceError: string | null;
   presenceStatus: StatusSummary | null;
@@ -1279,6 +1285,13 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
   }
 
   if (evt.event === "agent" || evt.event === "session.tool") {
+    const cronLiveInspector = host.cronLiveInspector ?? createCronLiveInspectorState();
+    if (appendCronLiveAgentEvent(cronLiveInspector, evt.payload)) {
+      host.cronLiveInspector = {
+        ...cronLiveInspector,
+        runs: [...cronLiveInspector.runs],
+      };
+    }
     if (host.onboarding) {
       return;
     }

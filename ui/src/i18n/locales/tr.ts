@@ -1527,6 +1527,12 @@ export const tr: TranslationMap = {
       refreshing: "Yenileniyor...",
       refresh: "Yenile",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "çalışıyor",
+      openSession: "Open session",
+    },
     jobs: {
       title: "İşler",
       subtitle: "Gateway'de depolanan tüm zamanlanmış işler.",

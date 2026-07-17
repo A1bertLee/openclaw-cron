@@ -1523,6 +1523,12 @@ export const fa: TranslationMap = {
       refreshing: "در حال تازه‌سازی...",
       refresh: "تازه‌سازی",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "در حال اجرا",
+      openSession: "Open session",
+    },
     jobs: {
       title: "کارها",
       subtitle: "همه کارهای زمان‌بندی‌شده ذخیره‌شده در Gateway.",

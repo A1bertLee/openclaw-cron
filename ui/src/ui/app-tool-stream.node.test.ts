@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ACTIVITY_ENTRY_LIMIT, ACTIVITY_OUTPUT_PREVIEW_LIMIT } from "./activity-model.ts";
 import {
+  flushToolStreamSync,
   handleAgentEvent,
   handleSessionOperationEvent,
   type FallbackStatus,
@@ -11,6 +12,7 @@ import {
 type ToolStreamHost = Parameters<typeof handleAgentEvent>[0];
 type AgentEvent = NonNullable<Parameters<typeof handleAgentEvent>[1]>;
 type MutableHost = ToolStreamHost & {
+  liveSessionKeys?: readonly string[];
   compactionStatus?: unknown;
   compactionClearTimer?: number | null;
   fallbackStatus?: FallbackStatus | null;
@@ -88,6 +90,61 @@ function useToolStreamFakeTimers(): void {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
   vi.setSystemTime(TOOL_STREAM_TEST_NOW);
 }
+
+describe("app-tool-stream Cron live transcript projection", () => {
+  it("projects an isolated Cron child assistant stream and tool call into its parent session", () => {
+    const globalWithWindow = globalThis as typeof globalThis & {
+      window?: Window & typeof globalThis;
+    };
+    globalWithWindow.window ??= globalThis as unknown as Window & typeof globalThis;
+    const parentSessionKey = "agent:main:cron:job-1";
+    const runSessionKey = `${parentSessionKey}:run:session-1`;
+    const host = createHost({
+      sessionKey: parentSessionKey,
+      liveSessionKeys: [runSessionKey],
+    });
+
+    handleAgentEvent(
+      host,
+      agentEvent(
+        "agent-run-1",
+        1,
+        "assistant",
+        { text: "I will inspect the task.", delta: "I will inspect the task." },
+        runSessionKey,
+      ),
+    );
+    expect(host.chatRunId).toBe("agent-run-1");
+    expect(host.chatStream).toBe("I will inspect the task.");
+
+    handleAgentEvent(
+      host,
+      agentEvent(
+        "agent-run-1",
+        2,
+        "tool",
+        { toolCallId: "call-1", name: "read_file", phase: "start", args: { path: "notes.md" } },
+        runSessionKey,
+      ),
+    );
+    flushToolStreamSync(host);
+    expect(host.chatToolMessages).toMatchObject([
+      { content: [{ type: "toolcall", name: "read_file" }] },
+    ]);
+
+    handleAgentEvent(
+      host,
+      agentEvent(
+        "agent-run-1",
+        3,
+        "assistant",
+        { text: "The task is ready.", delta: "The task is ready." },
+        runSessionKey,
+      ),
+    );
+    expect(host.chatStream).toBe("The task is ready.");
+  });
+});
 
 describe("app-tool-stream fallback lifecycle handling", () => {
   beforeEach(() => {

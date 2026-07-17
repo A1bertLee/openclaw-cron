@@ -2,6 +2,7 @@
 import { updateActivityFromToolEvent, type ActivityEntry } from "./activity-model.ts";
 import { createChatModelOverride } from "./chat-model-ref.ts";
 import type { ChatModelOverride } from "./chat-model-ref.types.ts";
+import { isCronRunSessionForParent } from "./cron-live-inspector.ts";
 import { formatUnknownText, truncateText } from "./format.ts";
 import {
   buildAgentMainSessionKey,
@@ -314,6 +315,10 @@ function selectedGlobalAliasEventMatches(
   return hostAgentId === eventAgentId;
 }
 
+function isLiveCronRunSessionForHost(host: ToolStreamHost, sessionKey: string): boolean {
+  return isCronRunSessionForParent(host.sessionKey, sessionKey);
+}
+
 function sessionKeyMatchesHost(
   host: ToolStreamHost,
   sessionKey: string,
@@ -322,7 +327,8 @@ function sessionKeyMatchesHost(
   return (
     normalizeSessionKeyForEventComparison(host, sessionKey) ===
       normalizeSessionKeyForEventComparison(host, host.sessionKey) ||
-    selectedGlobalAliasEventMatches(host, sessionKey, agentId)
+    selectedGlobalAliasEventMatches(host, sessionKey, agentId) ||
+    isLiveCronRunSessionForHost(host, sessionKey)
   );
 }
 
@@ -755,6 +761,24 @@ export function handleAgentEvent(host: ToolStreamHost, payload?: AgentEventPaylo
 
   if (payload.stream === "fallback") {
     handleLifecycleFallbackEvent(host as CompactionHost, payload);
+    return;
+  }
+
+  if (
+    payload.stream === "assistant" &&
+    sessionKey &&
+    isLiveCronRunSessionForHost(host, sessionKey)
+  ) {
+    const text = typeof payload.data?.text === "string" ? payload.data.text : null;
+    if (text === null) {
+      return;
+    }
+    if (host.chatRunId && host.chatRunId !== payload.runId) {
+      return;
+    }
+    host.chatRunId = payload.runId;
+    host.chatStream = text;
+    host.chatStreamStartedAt ??= payload.ts;
     return;
   }
 

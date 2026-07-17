@@ -1483,6 +1483,12 @@ export const zh_CN: TranslationMap = {
       refreshing: "刷新中...",
       refresh: "刷新",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "运行中",
+      openSession: "Open session",
+    },
     jobs: {
       title: "任务列表",
       subtitle: "网关中存储的所有定时任务。",

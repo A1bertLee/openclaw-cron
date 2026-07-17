@@ -9,6 +9,7 @@ import type {
   CronJobsLastStatusFilter,
   CronJobsScheduleKindFilter,
 } from "../controllers/cron.ts";
+import { cronParentSessionKeyFromRun, type CronLiveRun } from "../cron-live-inspector.ts";
 import { getCronJobPayload } from "../cron-payload.ts";
 import { resolveCronJobLastRunStatus } from "../cron-status.ts";
 import { formatRelativeTimestamp, formatMs } from "../format.ts";
@@ -69,6 +70,8 @@ export type CronProps = {
   timezoneSuggestions: string[];
   deliveryToSuggestions: string[];
   accountSuggestions: string[];
+  /** Bounded in-browser live event buffers for currently observed isolated Cron runs. */
+  liveRuns?: CronLiveRun[];
   onFormChange: (patch: Partial<CronFormState>) => void;
   onRefresh: () => void;
   onAdd: () => void;
@@ -348,6 +351,67 @@ function focusFormField(id: string) {
   el.focus();
 }
 
+function renderCronLiveInspector(
+  runs: CronLiveRun[] | undefined,
+  onNavigateToChat?: (sessionKey: string) => void,
+) {
+  if (!runs?.length) {
+    return nothing;
+  }
+  return html`
+    <section class="card" data-test-id="cron-live-inspector">
+      <div class="card-title">${t("cron.live.title")}</div>
+      <div class="card-sub">${t("cron.live.subtitle")}</div>
+      <div class="list" style="margin-top: 10px;">
+        ${runs.map((run) => {
+          const events = [...run.events].sort((a, b) => b.ts - a.ts || b.seq - a.seq);
+          const latest = events[0];
+          const parentSessionKey = cronParentSessionKeyFromRun(run.sessionKey);
+          return html`
+            <div class="list-item">
+              <div class="list-main">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  <div class="list-title" style="min-width: 0;">
+                    ${run.jobId} <span class="muted">· ${t("cron.live.running")}</span>
+                  </div>
+                  ${onNavigateToChat && parentSessionKey
+                    ? html`<button
+                        class="btn"
+                        type="button"
+                        style="margin-left: auto; white-space: nowrap;"
+                        @click=${() => onNavigateToChat(parentSessionKey)}
+                      >
+                        ${t("cron.live.openSession")}
+                      </button>`
+                    : nothing}
+                </div>
+                ${latest
+                  ? html`<details data-test-id="cron-live-run-events" style="margin-top: 6px;">
+                      <summary class="muted" data-test-id="cron-live-latest-event">
+                        ${formatMs(latest.ts)} · ${latest.summary}
+                      </summary>
+                      <div
+                        class="muted"
+                        data-test-id="cron-live-event-list"
+                        style="max-height: 240px; overflow-y: auto; margin-top: 6px;"
+                      >
+                        ${events.map(
+                          (event) => html`<div style="margin-top: 4px;">
+                            ${formatMs(event.ts)} · ${event.summary}
+                          </div>`,
+                        )}
+                      </div>
+                    </details>`
+                  : nothing}
+              </div>
+            </div>
+          `;
+        })}
+      </div>
+    </section>
+  `;
+}
+
 function renderFieldLabel(text: string, required = false) {
   return html`<span>
     ${text}
@@ -461,6 +525,8 @@ export function renderCron(props: CronProps) {
         ${props.error ? html`<span class="muted">${props.error}</span>` : nothing}
       </div>
     </section>
+
+    ${renderCronLiveInspector(props.liveRuns, props.onNavigateToChat)}
 
     <section class=${`cron-workspace ${formCollapsed ? "cron-workspace--form-collapsed" : ""}`}>
       <div class="cron-workspace-main">

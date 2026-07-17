@@ -1525,6 +1525,12 @@ export const pt_BR: TranslationMap = {
       refreshing: "Atualizando...",
       refresh: "Atualizar",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "em execução",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Tarefas",
       subtitle: "Todas as tarefas agendadas armazenadas no Gateway.",

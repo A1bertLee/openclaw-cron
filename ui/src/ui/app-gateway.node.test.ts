@@ -280,6 +280,45 @@ describe("connectGateway", () => {
     });
   });
 
+  it("captures an isolated Cron agent event while the Cron tab is open", () => {
+    const { host, client } = connectHostGateway();
+    host.tab = "cron";
+    client.emitEvent({
+      event: "agent",
+      payload: {
+        runId: "cron-run-1",
+        seq: 1,
+        stream: "tool",
+        ts: 1,
+        sessionKey: "agent:main:cron:job-1:run:session-1",
+        data: { name: "web_search", phase: "start" },
+      },
+    });
+
+    expect(host.cronLiveInspector?.runs).toHaveLength(1);
+    expect(host.cronLiveInspector?.runs[0]?.jobId).toBe("job-1");
+    expect(host.cronLiveInspector?.runs[0]?.events[0]?.summary).toBe("web_search started");
+  });
+
+  it("keeps capturing isolated Cron events after navigating away from the Cron tab", () => {
+    const { host, client } = connectHostGateway();
+    host.tab = "chat";
+    client.emitEvent({
+      event: "agent",
+      payload: {
+        runId: "cron-run-1",
+        seq: 1,
+        stream: "tool",
+        ts: 1,
+        sessionKey: "agent:main:cron:job-1:run:session-1",
+        data: { name: "web_search", phase: "start" },
+      },
+    });
+
+    expect(host.cronLiveInspector?.runs).toHaveLength(1);
+    expect(host.cronLiveInspector?.runs[0]?.events[0]?.summary).toBe("web_search started");
+  });
+
   it("ignores stale client onGap callbacks after reconnect", () => {
     const host = createHost();
 

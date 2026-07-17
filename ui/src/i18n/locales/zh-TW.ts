@@ -1485,6 +1485,12 @@ export const zh_TW: TranslationMap = {
       refreshing: "重新整理中...",
       refresh: "重新整理",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "執行中",
+      openSession: "Open session",
+    },
     jobs: {
       title: "工作",
       subtitle: "儲存在 Gateway 中的所有排程工作。",

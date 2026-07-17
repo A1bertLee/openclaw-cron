@@ -3086,6 +3086,7 @@ export function renderApp(state: AppViewState) {
                 timezoneSuggestions: CRON_TIMEZONE_SUGGESTIONS,
                 deliveryToSuggestions,
                 accountSuggestions,
+                liveRuns: state.cronLiveInspector.runs,
                 onFormChange: (patch) => {
                   state.cronForm = normalizeCronFormState({ ...state.cronForm, ...patch });
                   state.cronFieldErrors = validateCronForm(state.cronForm);

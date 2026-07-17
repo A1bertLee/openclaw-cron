@@ -1510,6 +1510,12 @@ export const en: TranslationMap = {
       refreshing: "Refreshing...",
       refresh: "Refresh",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "running",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Jobs",
       subtitle: "All scheduled jobs stored in the gateway.",

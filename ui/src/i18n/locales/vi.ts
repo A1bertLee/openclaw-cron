@@ -1513,6 +1513,12 @@ export const vi: TranslationMap = {
       refreshing: "Đang làm mới...",
       refresh: "Làm mới",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "đang chạy",
+      openSession: "Open session",
+    },
     jobs: {
       title: "Tác vụ",
       subtitle: "Tất cả tác vụ đã lên lịch được lưu trong gateway.",

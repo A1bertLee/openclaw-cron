@@ -1511,6 +1511,12 @@ export const ko: TranslationMap = {
       refreshing: "새로고침 중...",
       refresh: "새로고침",
     },
+    live: {
+      title: "Live runs",
+      subtitle: "Real-time isolated Cron activity. This buffer is cleared on browser reload.",
+      running: "실행 중",
+      openSession: "Open session",
+    },
     jobs: {
       title: "작업",
       subtitle: "Gateway에 저장된 모든 예약 작업입니다.",
